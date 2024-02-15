@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Music Streaming Web App</title>
+  <style>
+    /* styles.css */
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+}
+
+#app {
+  max-width: 600px;
+  margin: 50px auto;
+  padding: 20px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+}
+
+h1 {
+  text-align: center;
+}
+
+#loginForm {
+  margin-bottom: 20px;
+}
+
+input[type="email"],
+input[type="password"] {
+  width: 100%;
+  padding: 10px;
+  margin-bottom: 10px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+}
+
+button {
+  display: block;
+  width: 100%;
+  padding: 10px;
+  background-color: #007bff;
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+button:hover {
+  background-color: #0056b3;
+}
+
+#errorMessage {
+  color: red;
+  text-align: center;
+}
+
+#playlists div {
+  border: 1px solid #ccc;
+  padding: 10px;
+  margin-bottom: 10px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+#playlists div:hover {
+  background-color: #f0f0f0;
+}
+
+  </style>
+</head>
+<body>
+  <div id="app">
+    <h1>Music Streaming Web App</h1>
+    <div id="loginForm">
+      <input type="email" id="email" placeholder="Email">
+      <input type="password" id="password" placeholder="Password">
+      <button id="loginBtn">Login</button>
+    </div>
+    <div id="errorMessage"></div>
+    <div id="playlists"></div>
+  </div>
+  <script>
+    // scripts.js
+document.addEventListener('DOMContentLoaded', function () {
+  const loginBtn = document.getElementById('loginBtn');
+  const emailInput = document.getElementById('email');
+  const passwordInput = document.getElementById('password');
+  const playlistsDiv = document.getElementById('playlists');
+  const errorMessage = document.getElementById('errorMessage');
+
+  // Base URL for the Audiomack API
+  const baseURL = 'https://api.audiomack.com/v1';
+
+  // Function to handle user login
+  function login() {
+    const email = emailInput.value;
+    const password = passwordInput.value;
+
+    // Validate email and password
+    if (!email || !password) {
+      errorMessage.textContent = 'Please enter email and password';
+      return;
+    }
+
+    // Make API call to login
+    fetch(`${baseURL}/user/login`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ email, password })
+    })
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('Login failed');
+        }
+        return response.json();
+      })
+      .then(data => {
+        // Store access token in local storage
+        localStorage.setItem('accessToken', data.access_token);
+        // Fetch playlists after successful login
+        fetchPlaylists();
+      })
+      .catch(error => {
+        console.error('Login error:', error);
+        errorMessage.textContent = 'Login failed. Please try again.';
+      });
+  }
+
+  // Function to fetch playlists
+  function fetchPlaylists() {
+    // Get access token from local storage
+    const accessToken = localStorage.getItem('accessToken');
+
+    // Make API call to fetch playlists
+    fetch(`${baseURL}/user/playlists`, {
+      headers: {
+        'Authorization': `Bearer ${accessToken}`
+      }
+    })
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('Failed to fetch playlists');
+        }
+        return response.json();
+      })
+      .then(data => {
+        // Clear playlistsDiv
+        playlistsDiv.innerHTML = '';
+        // Display playlists
+        data.forEach(playlist => {
+          const playlistItem = document.createElement('div');
+          playlistItem.textContent = playlist.title;
+          playlistsDiv.appendChild(playlistItem);
+        });
+      })
+      .catch(error => {
+        console.error('Fetch playlists error:', error);
+        errorMessage.textContent = 'Failed to fetch playlists';
+      });
+  }
+
+  // Event listener for login button
+  loginBtn.addEventListener('click', login);
+});
+
+  </script>
+</body>
+</html>
